@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth/clerk";
 import { db } from "@/lib/db";
-import { agents, spendingPolicies, agentPermissions, agentApiKeys } from "@/lib/db/schema";
+import { agents } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { updateAgentStatusSchema, updateSpendingPolicySchema } from "@/lib/validations";
+import { updateAgentStatusSchema } from "@/lib/validations";
 import { createAuditLog } from "@/lib/engine/audit";
 
 // GET /api/agents/[id] — Get agent detail

@@ -5,12 +5,14 @@ import {
   LayoutDashboard,
   Wallet,
   Settings,
+  ScrollText,
 } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/agents", label: "Agents", icon: Bot },
   { href: "/wallet", label: "Wallet", icon: Wallet },
+  { href: "/activity", label: "Activity", icon: ScrollText },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

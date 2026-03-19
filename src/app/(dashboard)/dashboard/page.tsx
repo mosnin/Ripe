@@ -1,7 +1,7 @@
 import { requireAuth } from "@/lib/auth/clerk";
 import { db } from "@/lib/db";
 import { agents, actionRequests } from "@/lib/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, desc, inArray } from "drizzle-orm";
 import { getOrCreateWallet } from "@/lib/wallet/ledger";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,19 +13,21 @@ export default async function DashboardPage() {
   const wallet = await getOrCreateWallet(user.id);
 
   const userAgents = await db.query.agents.findMany({
-    where: and(eq(agents.ownerId, user.id)),
+    where: eq(agents.ownerId, user.id),
   });
 
   const activeAgents = userAgents.filter((a) => a.status === "active");
+  const agentIds = userAgents.map((a) => a.id);
+  const agentNameMap = new Map(userAgents.map((a) => [a.id, a.name]));
 
-  const recentActions = await db.query.actionRequests.findMany({
-    where: eq(
-      actionRequests.agentId,
-      userAgents[0]?.id ?? "00000000-0000-0000-0000-000000000000"
-    ),
-    orderBy: [desc(actionRequests.createdAt)],
-    limit: 5,
-  });
+  // Fetch recent actions across ALL user's agents
+  const recentActions = agentIds.length > 0
+    ? await db.query.actionRequests.findMany({
+        where: inArray(actionRequests.agentId, agentIds),
+        orderBy: [desc(actionRequests.createdAt)],
+        limit: 10,
+      })
+    : [];
 
   return (
     <div>
@@ -100,6 +102,7 @@ export default async function DashboardPage() {
                   <div>
                     <p className="text-sm font-medium">{action.actionType}</p>
                     <p className="text-xs text-[var(--muted-foreground)]">
+                      {agentNameMap.get(action.agentId) ?? "Unknown agent"} &middot;{" "}
                       {new Date(action.createdAt).toLocaleString()}
                     </p>
                   </div>

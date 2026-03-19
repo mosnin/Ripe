@@ -1,4 +1,3 @@
-import type { ActionType } from "@/lib/types";
 import { handlePaymentCreate } from "./payments";
 import { handleToolsEcho, handleToolsMockApi } from "./tools";
 

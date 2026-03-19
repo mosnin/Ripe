@@ -4,6 +4,7 @@ import { checkSpendingPolicy } from "./spending-policy";
 import { getActionHandler } from "./actions/registry";
 import { debitWallet } from "@/lib/wallet/ledger";
 import { createAuditLog } from "./audit";
+import { checkRateLimit, GATEWAY_RATE_LIMIT } from "./rate-limiter";
 import { db } from "@/lib/db";
 import { actionRequests, wallets } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -41,6 +42,20 @@ export async function executeAction(
   }
 
   const { agent, owner } = authResult;
+
+  // Step 1b: Rate limit
+  const rateResult = checkRateLimit(
+    `agent:${agent.id}`,
+    GATEWAY_RATE_LIMIT.maxRequests,
+    GATEWAY_RATE_LIMIT.windowMs
+  );
+  if (!rateResult.allowed) {
+    return {
+      success: false,
+      action_request_id: "",
+      error: `Rate limit exceeded. Retry after ${Math.ceil((rateResult.retryAfterMs ?? 0) / 1000)}s`,
+    };
+  }
 
   // Step 2: Resolve action handler
   const handler = getActionHandler(request.action);

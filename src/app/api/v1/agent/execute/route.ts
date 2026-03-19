@@ -25,16 +25,18 @@ export async function POST(req: Request) {
 
     const statusCode = result.success
       ? 200
-      : result.error?.includes("Authentication")
-        ? 401
-        : result.error?.includes("permission") ||
-            result.error?.includes("Insufficient") ||
-            result.error?.includes("exceeds") ||
-            result.error?.includes("denied") ||
-            result.error?.includes("Cooldown") ||
-            result.error?.includes("not allowed")
-          ? 403
-          : 500;
+      : result.error?.includes("Rate limit")
+        ? 429
+        : result.error?.includes("Authentication")
+          ? 401
+          : result.error?.includes("permission") ||
+              result.error?.includes("Insufficient") ||
+              result.error?.includes("exceeds") ||
+              result.error?.includes("denied") ||
+              result.error?.includes("Cooldown") ||
+              result.error?.includes("not allowed")
+            ? 403
+            : 500;
 
     return NextResponse.json(result, { status: statusCode });
   } catch {
