@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Breadcrumb } from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import { AgentStatusControl } from "@/components/agents/agent-status-control";
+import { AgentSetupWizard } from "@/components/agents/agent-setup-wizard";
+import { CopyButton } from "@/components/ui/copy-button";
 
 export default async function AgentDetailPage({
   params,
@@ -66,6 +68,14 @@ export default async function AgentDetailPage({
         <Badge variant={statusVariant}>{agent.status}</Badge>
       </div>
 
+      {/* Setup wizard (hidden when all steps complete) */}
+      <AgentSetupWizard
+        agentId={id}
+        hasKeys={activeKeys.length > 0}
+        hasPermissions={agent.permissions.length > 0}
+        hasPolicy={agent.spendingPolicy != null}
+      />
+
       {/* Quick info */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
         <Card>
@@ -114,16 +124,25 @@ export default async function AgentDetailPage({
 
         <Card>
           <CardHeader>
-            <CardTitle>Logs</CardTitle>
+            <CardTitle>Test</CardTitle>
           </CardHeader>
           <CardContent>
-            <Link href={`/agents/${id}/logs`}>
+            <Link href={`/agents/${id}/test`}>
               <Button variant="outline" size="sm">
-                View Logs
+                Open Playground
               </Button>
             </Link>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="mb-8">
+        <Link
+          href={`/agents/${id}/logs`}
+          className="text-sm text-[var(--muted-foreground)] hover:underline"
+        >
+          View full action logs
+        </Link>
       </div>
 
       {/* Agent ID */}
@@ -132,9 +151,12 @@ export default async function AgentDetailPage({
           <CardTitle>Agent ID</CardTitle>
         </CardHeader>
         <CardContent>
-          <code className="text-sm bg-[var(--muted)] px-2 py-1 rounded">
-            {agent.id}
-          </code>
+          <div className="flex items-center gap-2">
+            <code className="text-sm bg-[var(--muted)] px-2 py-1 rounded">
+              {agent.id}
+            </code>
+            <CopyButton value={agent.id} />
+          </div>
         </CardContent>
       </Card>
 

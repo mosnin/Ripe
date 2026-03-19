@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AgentBreadcrumb } from "@/components/agents/agent-breadcrumb";
+import { CopyButton } from "@/components/ui/copy-button";
 
 interface ApiKey {
   id: string;
@@ -127,9 +128,12 @@ export default function AgentKeysPage() {
               <p className="text-sm font-medium text-green-800 dark:text-green-200 mb-2">
                 Copy this key now — it will not be shown again.
               </p>
-              <code className="text-xs break-all bg-white dark:bg-black px-2 py-1 rounded block">
-                {newKey}
-              </code>
+              <div className="flex items-center gap-2">
+                <code className="text-xs break-all bg-white dark:bg-black px-2 py-1 rounded block flex-1">
+                  {newKey}
+                </code>
+                <CopyButton value={newKey} />
+              </div>
             </div>
           )}
         </CardContent>

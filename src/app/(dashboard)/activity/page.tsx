@@ -61,10 +61,10 @@ export default function ActivityPage() {
 
   const actionColor = (action: string) => {
     if (action.includes("created") || action.includes("granted") || action.includes("funded"))
-      return "text-green-600";
+      return "text-green-600 dark:text-green-400";
     if (action.includes("revoked") || action.includes("archived") || action.includes("denied"))
-      return "text-red-600";
-    if (action.includes("failed")) return "text-red-600";
+      return "text-red-600 dark:text-red-400";
+    if (action.includes("failed")) return "text-red-600 dark:text-red-400";
     return "";
   };
 

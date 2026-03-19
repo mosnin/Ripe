@@ -190,8 +190,8 @@ export default function WalletPage() {
                       <span
                         className={`text-sm font-medium ${
                           tx.type === "credit"
-                            ? "text-green-600"
-                            : "text-red-600"
+                            ? "text-green-600 dark:text-green-400"
+                            : "text-red-600 dark:text-red-400"
                         }`}
                       >
                         {tx.type === "credit" ? "+" : "-"}

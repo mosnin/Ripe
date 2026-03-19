@@ -90,8 +90,8 @@ export default function TransactionsPage() {
                         <td
                           className={`px-4 py-3 font-medium ${
                             tx.type === "credit"
-                              ? "text-green-600"
-                              : "text-red-600"
+                              ? "text-green-600 dark:text-green-400"
+                              : "text-red-600 dark:text-red-400"
                           }`}
                         >
                           {tx.type === "credit" ? "+" : "-"}
