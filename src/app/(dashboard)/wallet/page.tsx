@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -25,9 +26,12 @@ interface Transaction {
 }
 
 export default function WalletPage() {
+  const searchParams = useSearchParams();
+  const funded = searchParams.get("funded");
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [fundAmount, setFundAmount] = useState("");
+  const [banner, setBanner] = useState<{ type: "success" | "cancel"; message: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
   const fetchWallet = useCallback(async () => {
@@ -40,6 +44,23 @@ export default function WalletPage() {
   useEffect(() => {
     fetchWallet();
   }, [fetchWallet]);
+
+  useEffect(() => {
+    if (funded === "true") {
+      setBanner({
+        type: "success",
+        message: "Payment successful! Your wallet balance has been updated.",
+      });
+      // Clean URL without reload
+      window.history.replaceState(null, "", "/wallet");
+    } else if (funded === "false") {
+      setBanner({
+        type: "cancel",
+        message: "Payment was cancelled. No funds were added.",
+      });
+      window.history.replaceState(null, "", "/wallet");
+    }
+  }, [funded]);
 
   async function fundWallet() {
     const cents = Math.round(parseFloat(fundAmount) * 100);
@@ -70,6 +91,24 @@ export default function WalletPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Wallet</h1>
+
+      {banner && (
+        <div
+          className={`mb-4 rounded-md border p-3 text-sm flex items-center justify-between ${
+            banner.type === "success"
+              ? "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200"
+              : "border-yellow-200 bg-yellow-50 text-yellow-800 dark:border-yellow-800 dark:bg-yellow-950 dark:text-yellow-200"
+          }`}
+        >
+          <span>{banner.message}</span>
+          <button
+            onClick={() => setBanner(null)}
+            className="ml-3 text-xs opacity-60 hover:opacity-100"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Balance */}
       <Card className="mb-6">

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AgentBreadcrumb } from "@/components/agents/agent-breadcrumb";
 
 interface ApiKey {
   id: string;
@@ -20,14 +21,25 @@ export default function AgentKeysPage() {
   const params = useParams();
   const agentId = params.id as string;
   const [keys, setKeys] = useState<ApiKey[]>([]);
+  const [agentName, setAgentName] = useState<string>("");
   const [label, setLabel] = useState("default");
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const [newKey, setNewKey] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchKeys = useCallback(async () => {
-    const res = await fetch(`/api/agents/${agentId}`);
-    const data = await res.json();
-    setKeys(data.agent?.apiKeys ?? []);
+    try {
+      const res = await fetch(`/api/agents/${agentId}`);
+      if (!res.ok) throw new Error("Failed to load agent");
+      const data = await res.json();
+      setKeys(data.agent?.apiKeys ?? []);
+      setAgentName(data.agent?.name ?? "Agent");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load keys");
+    } finally {
+      setPageLoading(false);
+    }
   }, [agentId]);
 
   useEffect(() => {
@@ -37,17 +49,24 @@ export default function AgentKeysPage() {
   async function createKey() {
     setLoading(true);
     setNewKey(null);
+    setError(null);
     try {
       const res = await fetch("/api/keys", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ agent_id: agentId, label }),
       });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Failed to generate key");
+      }
       const data = await res.json();
       if (data.key?.raw_key) {
         setNewKey(data.key.raw_key);
       }
       await fetchKeys();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to generate key");
     } finally {
       setLoading(false);
     }
@@ -55,13 +74,34 @@ export default function AgentKeysPage() {
 
   async function revokeKey(keyId: string) {
     if (!confirm("Revoke this API key? This cannot be undone.")) return;
-    await fetch(`/api/keys?id=${keyId}`, { method: "DELETE" });
-    await fetchKeys();
+    setError(null);
+    try {
+      const res = await fetch(`/api/keys?id=${keyId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to revoke key");
+      await fetchKeys();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to revoke key");
+    }
+  }
+
+  if (pageLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-sm text-[var(--muted-foreground)]">Loading keys...</p>
+      </div>
+    );
   }
 
   return (
     <div>
+      <AgentBreadcrumb agentId={agentId} agentName={agentName} currentPage="API Keys" />
       <h1 className="text-2xl font-bold mb-6">API Keys</h1>
+
+      {error && (
+        <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
+          {error}
+        </div>
+      )}
 
       {/* Create key */}
       <Card className="mb-6">
@@ -78,7 +118,7 @@ export default function AgentKeysPage() {
                 placeholder="Key label"
               />
             </div>
-            <Button onClick={createKey} disabled={loading}>
+            <Button onClick={createKey} disabled={loading || !label}>
               {loading ? "Generating..." : "Generate Key"}
             </Button>
           </div>

@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import { AgentStatusControl } from "@/components/agents/agent-status-control";
 
@@ -47,6 +48,12 @@ export default async function AgentDetailPage({
 
   return (
     <div>
+      <Breadcrumb
+        items={[
+          { label: "Agents", href: "/agents" },
+          { label: agent.name },
+        ]}
+      />
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">{agent.name}</h1>

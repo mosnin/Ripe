@@ -5,6 +5,7 @@ import { eq, and } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { formatCents } from "@/lib/utils";
 
 export default async function AgentLogsPage({
@@ -40,6 +41,13 @@ export default async function AgentLogsPage({
 
   return (
     <div>
+      <Breadcrumb
+        items={[
+          { label: "Agents", href: "/agents" },
+          { label: agent.name, href: `/agents/${id}` },
+          { label: "Logs" },
+        ]}
+      />
       <h1 className="text-2xl font-bold mb-6">
         Action Logs — {agent.name}
       </h1>

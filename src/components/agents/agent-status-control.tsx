@@ -14,16 +14,24 @@ export function AgentStatusControl({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function updateStatus(status: string) {
     setLoading(true);
+    setError(null);
     try {
-      await fetch(`/api/agents/${agentId}`, {
+      const res = await fetch(`/api/agents/${agentId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Failed to update status");
+      }
       router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update agent status");
     } finally {
       setLoading(false);
     }
@@ -35,14 +43,19 @@ export function AgentStatusControl({
         <CardTitle>Agent Controls</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex gap-3">
+        {error && (
+          <div className="mb-3 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
+            {error}
+          </div>
+        )}
+        <div className="flex gap-3 flex-wrap">
           {currentStatus === "active" && (
             <Button
               variant="outline"
               onClick={() => updateStatus("suspended")}
               disabled={loading}
             >
-              Suspend Agent
+              {loading ? "Updating..." : "Suspend Agent"}
             </Button>
           )}
           {currentStatus === "suspended" && (
@@ -51,7 +64,7 @@ export function AgentStatusControl({
               onClick={() => updateStatus("active")}
               disabled={loading}
             >
-              Reactivate Agent
+              {loading ? "Updating..." : "Reactivate Agent"}
             </Button>
           )}
           {currentStatus !== "archived" && (

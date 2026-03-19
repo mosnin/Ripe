@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { AgentBreadcrumb } from "@/components/agents/agent-breadcrumb";
 import { PERMISSIONS } from "@/lib/types";
 
 interface Permission {
@@ -18,13 +19,31 @@ export default function AgentPermissionsPage() {
   const params = useParams();
   const agentId = params.id as string;
   const [permissions, setPermissions] = useState<Permission[]>([]);
+  const [agentName, setAgentName] = useState<string>("");
   const [selectedPermission, setSelectedPermission] = useState(PERMISSIONS[0]);
   const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchPermissions = useCallback(async () => {
-    const res = await fetch(`/api/agents/${agentId}/permissions`);
-    const data = await res.json();
-    setPermissions(data.permissions ?? []);
+    try {
+      // Fetch agent name alongside permissions
+      const [permRes, agentRes] = await Promise.all([
+        fetch(`/api/agents/${agentId}/permissions`),
+        fetch(`/api/agents/${agentId}`),
+      ]);
+      if (!permRes.ok) throw new Error("Failed to load permissions");
+      const permData = await permRes.json();
+      setPermissions(permData.permissions ?? []);
+      if (agentRes.ok) {
+        const agentData = await agentRes.json();
+        setAgentName(agentData.agent?.name ?? "Agent");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load permissions");
+    } finally {
+      setPageLoading(false);
+    }
   }, [agentId]);
 
   useEffect(() => {
@@ -33,31 +52,59 @@ export default function AgentPermissionsPage() {
 
   async function grantPerm() {
     setLoading(true);
+    setError(null);
     try {
-      await fetch(`/api/agents/${agentId}/permissions`, {
+      const res = await fetch(`/api/agents/${agentId}/permissions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ permission: selectedPermission }),
       });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error ?? "Failed to grant permission");
+      }
       await fetchPermissions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to grant permission");
     } finally {
       setLoading(false);
     }
   }
 
   async function revokePerm(permissionId: string) {
-    await fetch(
-      `/api/agents/${agentId}/permissions?permission_id=${permissionId}`,
-      { method: "DELETE" }
-    );
-    await fetchPermissions();
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/agents/${agentId}/permissions?permission_id=${permissionId}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) throw new Error("Failed to revoke permission");
+      await fetchPermissions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to revoke permission");
+    }
   }
 
   const grantedPerms = new Set(permissions.map((p) => p.permission));
 
+  if (pageLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-sm text-[var(--muted-foreground)]">Loading permissions...</p>
+      </div>
+    );
+  }
+
   return (
     <div>
+      <AgentBreadcrumb agentId={agentId} agentName={agentName} currentPage="Permissions" />
       <h1 className="text-2xl font-bold mb-6">Permissions</h1>
+
+      {error && (
+        <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200">
+          {error}
+        </div>
+      )}
 
       <Card className="mb-6">
         <CardHeader>
@@ -81,8 +128,11 @@ export default function AgentPermissionsPage() {
                 ))}
               </select>
             </div>
-            <Button onClick={grantPerm} disabled={loading}>
-              Grant
+            <Button
+              onClick={grantPerm}
+              disabled={loading || grantedPerms.has(selectedPermission)}
+            >
+              {loading ? "Granting..." : "Grant"}
             </Button>
           </div>
         </CardContent>
