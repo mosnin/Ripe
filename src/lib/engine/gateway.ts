@@ -1,4 +1,5 @@
 import { authenticateAgent } from "@/lib/auth/agent-auth";
+import { fireWebhook } from "./webhooks";
 import { checkPermission } from "./permissions";
 import { checkSpendingPolicy } from "./spending-policy";
 import { getActionHandler } from "./actions/registry";
@@ -210,6 +211,14 @@ export async function executeAction(
       },
     });
 
+    // Step 8: Fire webhook (non-blocking)
+    fireWebhook(agent.id, "action.completed", {
+      action_type: request.action,
+      result,
+      cost_cents: costCents,
+      duration_ms: durationMs,
+    }, actionReq.id);
+
     return {
       success: true,
       action_request_id: actionReq.id,
@@ -237,6 +246,12 @@ export async function executeAction(
       resourceId: actionReq.id,
       metadata: { error: errorMessage, action: request.action },
     });
+
+    // Fire webhook for failures too
+    fireWebhook(agent.id, "action.failed", {
+      action_type: request.action,
+      error: errorMessage,
+    }, actionReq.id);
 
     return {
       success: false,

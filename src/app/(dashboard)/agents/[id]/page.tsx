@@ -10,6 +10,7 @@ import { Breadcrumb } from "@/components/ui/breadcrumb";
 import Link from "next/link";
 import { AgentStatusControl } from "@/components/agents/agent-status-control";
 import { AgentSetupWizard } from "@/components/agents/agent-setup-wizard";
+import { AgentTimeline } from "@/components/agents/agent-timeline";
 import { CopyButton } from "@/components/ui/copy-button";
 
 export default async function AgentDetailPage({
@@ -136,14 +137,30 @@ export default async function AgentDetailPage({
         </Card>
       </div>
 
-      <div className="mb-8">
+      <div className="mb-8 flex gap-4">
         <Link
           href={`/agents/${id}/logs`}
           className="text-sm text-[var(--muted-foreground)] hover:underline"
         >
-          View full action logs
+          View action logs
+        </Link>
+        <Link
+          href={`/agents/${id}/webhook`}
+          className="text-sm text-[var(--muted-foreground)] hover:underline"
+        >
+          Configure webhook
         </Link>
       </div>
+
+      {/* Recent timeline */}
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AgentTimeline agentId={id} />
+        </CardContent>
+      </Card>
 
       {/* Agent ID */}
       <Card className="mb-4">

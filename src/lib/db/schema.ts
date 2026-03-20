@@ -78,6 +78,7 @@ export const agents = pgTable(
     name: text("name").notNull(),
     description: text("description"),
     status: agentStatusEnum("status").default("active").notNull(),
+    webhookUrl: text("webhook_url"),
     metadata: jsonb("metadata"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),

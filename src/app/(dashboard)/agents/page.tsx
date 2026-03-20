@@ -2,10 +2,10 @@ import { requireAuth } from "@/lib/auth/clerk";
 import { db } from "@/lib/db";
 import { agents } from "@/lib/db/schema";
 import { eq, and, ilike, sql, SQL } from "drizzle-orm";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { AgentsFilters } from "@/components/agents/agents-filters";
+import { AgentsTable } from "@/components/agents/agents-table";
 
 const PAGE_SIZE = 10;
 
@@ -47,19 +47,6 @@ export default async function AgentsPage({
   const totalCount = Number(countResult[0]?.count ?? 0);
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
-  const statusVariant = (s: string) => {
-    switch (s) {
-      case "active":
-        return "success" as const;
-      case "suspended":
-        return "warning" as const;
-      case "archived":
-        return "destructive" as const;
-      default:
-        return "outline" as const;
-    }
-  };
-
   // Build pagination URLs
   function pageUrl(p: number) {
     const params = new URLSearchParams();
@@ -69,6 +56,15 @@ export default async function AgentsPage({
     const qs = params.toString();
     return `/agents${qs ? `?${qs}` : ""}`;
   }
+
+  // Serialize for client component
+  const agentData = userAgents.map((a) => ({
+    id: a.id,
+    name: a.name,
+    description: a.description,
+    status: a.status,
+    createdAt: a.createdAt.toISOString(),
+  }));
 
   return (
     <div>
@@ -97,52 +93,7 @@ export default async function AgentsPage({
         </div>
       ) : (
         <>
-          <div className="border border-[var(--border)] rounded-lg overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-[var(--muted)]">
-                <tr>
-                  <th className="text-left px-4 py-3 font-medium">Name</th>
-                  <th className="text-left px-4 py-3 font-medium">Status</th>
-                  <th className="text-left px-4 py-3 font-medium hidden sm:table-cell">Created</th>
-                  <th className="text-right px-4 py-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border)]">
-                {userAgents.map((agent) => (
-                  <tr key={agent.id} className="hover:bg-[var(--muted)]">
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/agents/${agent.id}`}
-                        className="font-medium hover:underline"
-                      >
-                        {agent.name}
-                      </Link>
-                      {agent.description && (
-                        <p className="text-xs text-[var(--muted-foreground)] mt-0.5 truncate max-w-xs">
-                          {agent.description}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant={statusVariant(agent.status)}>
-                        {agent.status}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3 text-[var(--muted-foreground)] hidden sm:table-cell">
-                      {new Date(agent.createdAt).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link href={`/agents/${agent.id}`}>
-                        <Button variant="ghost" size="sm">
-                          View
-                        </Button>
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <AgentsTable agents={agentData} />
 
           {/* Pagination */}
           {totalPages > 1 && (
